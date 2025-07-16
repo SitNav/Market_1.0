@@ -12,6 +12,8 @@ import CreateListing from "@/pages/create-listing";
 import ListingDetail from "@/pages/listing-detail";
 import Profile from "@/pages/profile";
 import Admin from "@/pages/admin";
+import Forum from "@/pages/forum";
+import ForumPost from "@/pages/forum-post";
 import Navigation from "@/components/navigation";
 
 function Router() {
@@ -39,6 +41,8 @@ function Router() {
             <Route path="/listing/:id" component={ListingDetail} />
             <Route path="/profile" component={Profile} />
             <Route path="/admin" component={Admin} />
+            <Route path="/forum" component={Forum} />
+            <Route path="/forum/:id" component={ForumPost} />
           </>
         )}
         <Route component={NotFound} />

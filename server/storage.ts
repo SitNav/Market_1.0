@@ -4,6 +4,10 @@ import {
   listings,
   messages,
   reports,
+  comments,
+  forumPosts,
+  reviews,
+  userRatings,
   type User,
   type UpsertUser,
   type Category,
@@ -16,6 +20,18 @@ import {
   type MessageWithDetails,
   type Report,
   type InsertReport,
+  type Comment,
+  type InsertComment,
+  type CommentWithDetails,
+  type ForumPost,
+  type InsertForumPost,
+  type ForumPostWithDetails,
+  type Review,
+  type InsertReview,
+  type ReviewWithDetails,
+  type UserRating,
+  type InsertUserRating,
+  type UserWithRating,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, like, and, or, sql, count } from "drizzle-orm";
@@ -62,6 +78,32 @@ export interface IStorage {
   getListingsCount(): Promise<number>;
   getReportsCount(): Promise<number>;
   getPendingReportsCount(): Promise<number>;
+  
+  // Comment operations
+  getComments(params?: { listingId?: number; forumPostId?: number; parentId?: number }): Promise<CommentWithDetails[]>;
+  createComment(comment: InsertComment): Promise<Comment>;
+  updateComment(id: number, comment: Partial<InsertComment>): Promise<Comment>;
+  deleteComment(id: number): Promise<void>;
+  
+  // Forum operations
+  getForumPosts(params?: { categoryId?: number; limit?: number; offset?: number }): Promise<ForumPostWithDetails[]>;
+  getForumPost(id: number): Promise<ForumPostWithDetails | undefined>;
+  createForumPost(post: InsertForumPost): Promise<ForumPost>;
+  updateForumPost(id: number, post: Partial<InsertForumPost>): Promise<ForumPost>;
+  deleteForumPost(id: number): Promise<void>;
+  incrementForumPostViewCount(id: number): Promise<void>;
+  
+  // Review operations
+  getReviews(params?: { reviewedUserId?: string; listingId?: number; limit?: number; offset?: number }): Promise<ReviewWithDetails[]>;
+  getUserReviews(userId: string): Promise<ReviewWithDetails[]>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: number, review: Partial<InsertReview>): Promise<Review>;
+  deleteReview(id: number): Promise<void>;
+  
+  // User rating operations
+  getUserRating(userId: string): Promise<UserRating | undefined>;
+  updateUserRating(userId: string, rating: Partial<InsertUserRating>): Promise<UserRating>;
+  calculateUserRating(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -432,6 +474,328 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.select({ count: count() }).from(reports)
       .where(eq(reports.status, 'pending'));
     return result.count;
+  }
+
+  // Comment operations
+  async getComments(params?: { listingId?: number; forumPostId?: number; parentId?: number }): Promise<CommentWithDetails[]> {
+    const { listingId, forumPostId, parentId } = params || {};
+    
+    let query = db
+      .select({
+        id: comments.id,
+        userId: comments.userId,
+        listingId: comments.listingId,
+        forumPostId: comments.forumPostId,
+        parentId: comments.parentId,
+        content: comments.content,
+        isEdited: comments.isEdited,
+        createdAt: comments.createdAt,
+        updatedAt: comments.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          isVerified: users.isVerified,
+        },
+      })
+      .from(comments)
+      .leftJoin(users, eq(comments.userId, users.id));
+
+    const conditions = [];
+    
+    if (listingId) {
+      conditions.push(eq(comments.listingId, listingId));
+    }
+    
+    if (forumPostId) {
+      conditions.push(eq(comments.forumPostId, forumPostId));
+    }
+    
+    if (parentId !== undefined) {
+      conditions.push(parentId ? eq(comments.parentId, parentId) : sql`${comments.parentId} IS NULL`);
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const results = await query.orderBy(asc(comments.createdAt));
+    
+    return results.map(result => ({
+      ...result,
+      user: result.user as User,
+    }));
+  }
+
+  async createComment(comment: InsertComment): Promise<Comment> {
+    const [newComment] = await db.insert(comments).values(comment).returning();
+    return newComment;
+  }
+
+  async updateComment(id: number, commentData: Partial<InsertComment>): Promise<Comment> {
+    const [comment] = await db
+      .update(comments)
+      .set({ ...commentData, isEdited: true, updatedAt: new Date() })
+      .where(eq(comments.id, id))
+      .returning();
+    return comment;
+  }
+
+  async deleteComment(id: number): Promise<void> {
+    await db.delete(comments).where(eq(comments.id, id));
+  }
+
+  // Forum operations
+  async getForumPosts(params?: { categoryId?: number; limit?: number; offset?: number }): Promise<ForumPostWithDetails[]> {
+    const { categoryId, limit = 20, offset = 0 } = params || {};
+    
+    let query = db
+      .select({
+        id: forumPosts.id,
+        userId: forumPosts.userId,
+        categoryId: forumPosts.categoryId,
+        title: forumPosts.title,
+        content: forumPosts.content,
+        isPinned: forumPosts.isPinned,
+        isLocked: forumPosts.isLocked,
+        viewCount: forumPosts.viewCount,
+        createdAt: forumPosts.createdAt,
+        updatedAt: forumPosts.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          isVerified: users.isVerified,
+        },
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          color: categories.color,
+          icon: categories.icon,
+        },
+      })
+      .from(forumPosts)
+      .leftJoin(users, eq(forumPosts.userId, users.id))
+      .leftJoin(categories, eq(forumPosts.categoryId, categories.id));
+
+    if (categoryId) {
+      query = query.where(eq(forumPosts.categoryId, categoryId));
+    }
+
+    const results = await query
+      .orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return results.map(result => ({
+      ...result,
+      user: result.user as User,
+      category: result.category as Category,
+    }));
+  }
+
+  async getForumPost(id: number): Promise<ForumPostWithDetails | undefined> {
+    const [result] = await db
+      .select({
+        id: forumPosts.id,
+        userId: forumPosts.userId,
+        categoryId: forumPosts.categoryId,
+        title: forumPosts.title,
+        content: forumPosts.content,
+        isPinned: forumPosts.isPinned,
+        isLocked: forumPosts.isLocked,
+        viewCount: forumPosts.viewCount,
+        createdAt: forumPosts.createdAt,
+        updatedAt: forumPosts.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          isVerified: users.isVerified,
+        },
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          color: categories.color,
+          icon: categories.icon,
+        },
+      })
+      .from(forumPosts)
+      .leftJoin(users, eq(forumPosts.userId, users.id))
+      .leftJoin(categories, eq(forumPosts.categoryId, categories.id))
+      .where(eq(forumPosts.id, id));
+
+    if (!result) return undefined;
+    
+    return {
+      ...result,
+      user: result.user as User,
+      category: result.category as Category,
+    };
+  }
+
+  async createForumPost(post: InsertForumPost): Promise<ForumPost> {
+    const [newPost] = await db.insert(forumPosts).values(post).returning();
+    return newPost;
+  }
+
+  async updateForumPost(id: number, postData: Partial<InsertForumPost>): Promise<ForumPost> {
+    const [post] = await db
+      .update(forumPosts)
+      .set({ ...postData, updatedAt: new Date() })
+      .where(eq(forumPosts.id, id))
+      .returning();
+    return post;
+  }
+
+  async deleteForumPost(id: number): Promise<void> {
+    await db.delete(forumPosts).where(eq(forumPosts.id, id));
+  }
+
+  async incrementForumPostViewCount(id: number): Promise<void> {
+    await db
+      .update(forumPosts)
+      .set({ viewCount: sql`${forumPosts.viewCount} + 1` })
+      .where(eq(forumPosts.id, id));
+  }
+
+  // Review operations
+  async getReviews(params?: { reviewedUserId?: string; listingId?: number; limit?: number; offset?: number }): Promise<ReviewWithDetails[]> {
+    const { reviewedUserId, listingId, limit = 20, offset = 0 } = params || {};
+    
+    let query = db
+      .select({
+        id: reviews.id,
+        reviewerId: reviews.reviewerId,
+        reviewedUserId: reviews.reviewedUserId,
+        listingId: reviews.listingId,
+        rating: reviews.rating,
+        comment: reviews.comment,
+        createdAt: reviews.createdAt,
+        updatedAt: reviews.updatedAt,
+        reviewer: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          isVerified: users.isVerified,
+        },
+      })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.reviewerId, users.id));
+
+    const conditions = [];
+    
+    if (reviewedUserId) {
+      conditions.push(eq(reviews.reviewedUserId, reviewedUserId));
+    }
+    
+    if (listingId) {
+      conditions.push(eq(reviews.listingId, listingId));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const results = await query
+      .orderBy(desc(reviews.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return results.map(result => ({
+      ...result,
+      reviewer: result.reviewer as User,
+    }));
+  }
+
+  async getUserReviews(userId: string): Promise<ReviewWithDetails[]> {
+    return this.getReviews({ reviewedUserId: userId });
+  }
+
+  async createReview(review: InsertReview): Promise<Review> {
+    const [newReview] = await db.insert(reviews).values(review).returning();
+    
+    // Update user rating after creating review
+    if (review.reviewedUserId) {
+      await this.calculateUserRating(review.reviewedUserId);
+    }
+    
+    return newReview;
+  }
+
+  async updateReview(id: number, reviewData: Partial<InsertReview>): Promise<Review> {
+    const [review] = await db
+      .update(reviews)
+      .set({ ...reviewData, updatedAt: new Date() })
+      .where(eq(reviews.id, id))
+      .returning();
+    
+    // Update user rating after updating review
+    if (review.reviewedUserId) {
+      await this.calculateUserRating(review.reviewedUserId);
+    }
+    
+    return review;
+  }
+
+  async deleteReview(id: number): Promise<void> {
+    const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
+    await db.delete(reviews).where(eq(reviews.id, id));
+    
+    // Update user rating after deleting review
+    if (review?.reviewedUserId) {
+      await this.calculateUserRating(review.reviewedUserId);
+    }
+  }
+
+  // User rating operations
+  async getUserRating(userId: string): Promise<UserRating | undefined> {
+    const [rating] = await db.select().from(userRatings).where(eq(userRatings.userId, userId));
+    return rating;
+  }
+
+  async updateUserRating(userId: string, ratingData: Partial<InsertUserRating>): Promise<UserRating> {
+    const [rating] = await db
+      .insert(userRatings)
+      .values({ userId, ...ratingData })
+      .onConflictDoUpdate({
+        target: userRatings.userId,
+        set: { ...ratingData, updatedAt: new Date() },
+      })
+      .returning();
+    return rating;
+  }
+
+  async calculateUserRating(userId: string): Promise<void> {
+    const userReviews = await db.select().from(reviews).where(eq(reviews.reviewedUserId, userId));
+    
+    if (userReviews.length === 0) {
+      await this.updateUserRating(userId, {
+        totalPoints: 0,
+        totalReviews: 0,
+        averageRating: 0,
+      });
+      return;
+    }
+
+    const totalReviews = userReviews.length;
+    const totalStars = userReviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalStars / totalReviews;
+    
+    // Calculate points based on 785 max system: (average rating / 5) * 785
+    const totalPoints = Math.round((averageRating / 5) * 785);
+
+    await this.updateUserRating(userId, {
+      totalPoints,
+      totalReviews,
+      averageRating,
+    });
   }
 }
 

@@ -9,6 +9,7 @@ import {
   integer,
   decimal,
   boolean,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -94,16 +95,71 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Comments table
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  listingId: integer("listing_id").references(() => listings.id),
+  forumPostId: integer("forum_post_id"),
+  parentId: integer("parent_id"),
+  content: text("content").notNull(),
+  isEdited: boolean("is_edited").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Forum posts table
+export const forumPosts = pgTable("forum_posts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  categoryId: integer("category_id").references(() => categories.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  isPinned: boolean("is_pinned").default(false),
+  isLocked: boolean("is_locked").default(false),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Reviews table
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  reviewerId: varchar("reviewer_id").references(() => users.id).notNull(),
+  reviewedUserId: varchar("reviewed_user_id").references(() => users.id),
+  listingId: integer("listing_id").references(() => listings.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User ratings table
+export const userRatings = pgTable("user_ratings", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  totalPoints: integer("total_points").default(0),
+  totalReviews: integer("total_reviews").default(0),
+  averageRating: real("average_rating").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   listings: many(listings),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
   reports: many(reports),
+  comments: many(comments),
+  forumPosts: many(forumPosts),
+  givenReviews: many(reviews, { relationName: "givenReviews" }),
+  receivedReviews: many(reviews, { relationName: "receivedReviews" }),
+  rating: one(userRatings, { fields: [users.id], references: [userRatings.userId] }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   listings: many(listings),
+  forumPosts: many(forumPosts),
 }));
 
 export const listingsRelations = relations(listings, ({ one, many }) => ({
@@ -111,6 +167,8 @@ export const listingsRelations = relations(listings, ({ one, many }) => ({
   category: one(categories, { fields: [listings.categoryId], references: [categories.id] }),
   messages: many(messages),
   reports: many(reports),
+  comments: many(comments),
+  reviews: many(reviews),
 }));
 
 export const messagesRelations = relations(messages, ({ one }) => ({
@@ -125,12 +183,40 @@ export const reportsRelations = relations(reports, ({ one }) => ({
   reportedUser: one(users, { fields: [reports.reportedUserId], references: [users.id] }),
 }));
 
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  user: one(users, { fields: [comments.userId], references: [users.id] }),
+  listing: one(listings, { fields: [comments.listingId], references: [listings.id] }),
+  forumPost: one(forumPosts, { fields: [comments.forumPostId], references: [forumPosts.id] }),
+  parent: one(comments, { fields: [comments.parentId], references: [comments.id] }),
+  replies: many(comments, { relationName: "replies" }),
+}));
+
+export const forumPostsRelations = relations(forumPosts, ({ one, many }) => ({
+  user: one(users, { fields: [forumPosts.userId], references: [users.id] }),
+  category: one(categories, { fields: [forumPosts.categoryId], references: [categories.id] }),
+  comments: many(comments),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  reviewer: one(users, { fields: [reviews.reviewerId], references: [users.id], relationName: "givenReviews" }),
+  reviewedUser: one(users, { fields: [reviews.reviewedUserId], references: [users.id], relationName: "receivedReviews" }),
+  listing: one(listings, { fields: [reviews.listingId], references: [listings.id] }),
+}));
+
+export const userRatingsRelations = relations(userRatings, ({ one }) => ({
+  user: one(users, { fields: [userRatings.userId], references: [users.id] }),
+}));
+
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertCategorySchema = createInsertSchema(categories);
 export const insertListingSchema = createInsertSchema(listings);
 export const insertMessageSchema = createInsertSchema(messages);
 export const insertReportSchema = createInsertSchema(reports);
+export const insertCommentSchema = createInsertSchema(comments);
+export const insertForumPostSchema = createInsertSchema(forumPosts);
+export const insertReviewSchema = createInsertSchema(reviews);
+export const insertUserRatingSchema = createInsertSchema(userRatings);
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
@@ -143,6 +229,14 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = typeof messages.$inferInsert;
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = typeof comments.$inferInsert;
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type InsertForumPost = typeof forumPosts.$inferInsert;
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = typeof reviews.$inferInsert;
+export type UserRating = typeof userRatings.$inferSelect;
+export type InsertUserRating = typeof userRatings.$inferInsert;
 
 // Extended types for API responses
 export type ListingWithDetails = Listing & {
@@ -155,4 +249,29 @@ export type MessageWithDetails = Message & {
   sender: User;
   receiver: User;
   listing?: Listing;
+};
+
+export type CommentWithDetails = Comment & {
+  user: User;
+  listing?: Listing;
+  forumPost?: ForumPost;
+  parent?: Comment;
+  replies?: CommentWithDetails[];
+};
+
+export type ForumPostWithDetails = ForumPost & {
+  user: User;
+  category?: Category;
+  comments?: CommentWithDetails[];
+  commentCount?: number;
+};
+
+export type ReviewWithDetails = Review & {
+  reviewer: User;
+  reviewedUser?: User;
+  listing?: Listing;
+};
+
+export type UserWithRating = User & {
+  rating?: UserRating;
 };

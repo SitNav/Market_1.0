@@ -356,6 +356,252 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment routes
+  app.get("/api/comments", async (req, res) => {
+    try {
+      const { listingId, forumPostId, parentId } = req.query;
+      const comments = await storage.getComments({
+        listingId: listingId ? parseInt(listingId as string) : undefined,
+        forumPostId: forumPostId ? parseInt(forumPostId as string) : undefined,
+        parentId: parentId ? parseInt(parentId as string) : undefined,
+      });
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/comments", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const comment = await storage.createComment({
+        ...req.body,
+        userId,
+      });
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.put("/api/comments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const commentId = parseInt(req.params.id);
+      
+      // Check if user owns the comment
+      const existingComments = await storage.getComments();
+      const comment = existingComments.find(c => c.id === commentId);
+      
+      if (!comment || comment.userId !== userId) {
+        return res.status(403).json({ message: "Not authorized to edit this comment" });
+      }
+      
+      const updatedComment = await storage.updateComment(commentId, req.body);
+      res.json(updatedComment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/comments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const commentId = parseInt(req.params.id);
+      
+      // Check if user owns the comment
+      const existingComments = await storage.getComments();
+      const comment = existingComments.find(c => c.id === commentId);
+      
+      if (!comment || comment.userId !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this comment" });
+      }
+      
+      await storage.deleteComment(commentId);
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // Forum routes
+  app.get("/api/forum/posts", async (req, res) => {
+    try {
+      const { categoryId, limit, offset } = req.query;
+      const posts = await storage.getForumPosts({
+        categoryId: categoryId ? parseInt(categoryId as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching forum posts:", error);
+      res.status(500).json({ message: "Failed to fetch forum posts" });
+    }
+  });
+
+  app.get("/api/forum/posts/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getForumPost(postId);
+      
+      if (!post) {
+        return res.status(404).json({ message: "Forum post not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementForumPostViewCount(postId);
+      
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching forum post:", error);
+      res.status(500).json({ message: "Failed to fetch forum post" });
+    }
+  });
+
+  app.post("/api/forum/posts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const post = await storage.createForumPost({
+        ...req.body,
+        userId,
+      });
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating forum post:", error);
+      res.status(500).json({ message: "Failed to create forum post" });
+    }
+  });
+
+  app.put("/api/forum/posts/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postId = parseInt(req.params.id);
+      
+      // Check if user owns the post
+      const post = await storage.getForumPost(postId);
+      
+      if (!post || post.userId !== userId) {
+        return res.status(403).json({ message: "Not authorized to edit this post" });
+      }
+      
+      const updatedPost = await storage.updateForumPost(postId, req.body);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating forum post:", error);
+      res.status(500).json({ message: "Failed to update forum post" });
+    }
+  });
+
+  app.delete("/api/forum/posts/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postId = parseInt(req.params.id);
+      
+      // Check if user owns the post
+      const post = await storage.getForumPost(postId);
+      
+      if (!post || post.userId !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this post" });
+      }
+      
+      await storage.deleteForumPost(postId);
+      res.json({ message: "Forum post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting forum post:", error);
+      res.status(500).json({ message: "Failed to delete forum post" });
+    }
+  });
+
+  // Review routes
+  app.get("/api/reviews", async (req, res) => {
+    try {
+      const { reviewedUserId, listingId, limit, offset } = req.query;
+      const reviews = await storage.getReviews({
+        reviewedUserId: reviewedUserId as string,
+        listingId: listingId ? parseInt(listingId as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  app.post("/api/reviews", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const review = await storage.createReview({
+        ...req.body,
+        reviewerId: userId,
+      });
+      res.json(review);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+
+  app.put("/api/reviews/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const reviewId = parseInt(req.params.id);
+      
+      // Check if user owns the review
+      const existingReviews = await storage.getReviews();
+      const review = existingReviews.find(r => r.id === reviewId);
+      
+      if (!review || review.reviewerId !== userId) {
+        return res.status(403).json({ message: "Not authorized to edit this review" });
+      }
+      
+      const updatedReview = await storage.updateReview(reviewId, req.body);
+      res.json(updatedReview);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ message: "Failed to update review" });
+    }
+  });
+
+  app.delete("/api/reviews/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const reviewId = parseInt(req.params.id);
+      
+      // Check if user owns the review
+      const existingReviews = await storage.getReviews();
+      const review = existingReviews.find(r => r.id === reviewId);
+      
+      if (!review || review.reviewerId !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this review" });
+      }
+      
+      await storage.deleteReview(reviewId);
+      res.json({ message: "Review deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ message: "Failed to delete review" });
+    }
+  });
+
+  // User rating routes
+  app.get("/api/users/:id/rating", async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const rating = await storage.getUserRating(userId);
+      res.json(rating || { totalPoints: 0, totalReviews: 0, averageRating: 0 });
+    } catch (error) {
+      console.error("Error fetching user rating:", error);
+      res.status(500).json({ message: "Failed to fetch user rating" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

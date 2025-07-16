@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import UserAvatar from "@/components/user-avatar";
+import CommentsSection from "@/components/comments-section";
+import ReviewsSection from "@/components/reviews-section";
 import type { ListingWithDetails, Message } from "@shared/schema";
 
 export default function ListingDetail() {
@@ -360,6 +362,12 @@ export default function ListingDetail() {
               </CardContent>
             </Card>
           </div>
+        </div>
+        
+        {/* Comments and Reviews Section */}
+        <div className="mt-8 space-y-6">
+          <CommentsSection listingId={parseInt(id!)} />
+          <ReviewsSection listingId={parseInt(id!)} reviewedUserId={listing?.userId || ""} />
         </div>
       </div>
     </div>

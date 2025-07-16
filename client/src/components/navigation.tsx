@@ -30,6 +30,7 @@ export default function Navigation() {
 
   const navigationItems = [
     { href: "/marketplace", label: "Marketplace" },
+    { href: "/forum", label: "Forum" },
     { href: "/categories", label: "Categories" },
     { href: "/resources", label: "Resources" },
     { href: "/about", label: "About" },
