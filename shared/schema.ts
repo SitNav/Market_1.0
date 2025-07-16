@@ -62,12 +62,21 @@ export const listings = pgTable("listings", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }),
+  originalPrice: decimal("original_price", { precision: 10, scale: 2 }), // For discounts
   priceType: varchar("price_type", { length: 20 }).notNull(), // 'fixed', 'free', 'negotiable'
   location: varchar("location", { length: 200 }),
   images: text("images").array(),
   status: varchar("status", { length: 20 }).notNull().default("active"), // 'active', 'sold', 'suspended'
+  condition: varchar("condition", { length: 20 }).default("new"), // 'new', 'like_new', 'good', 'fair', 'poor'
+  quantity: integer("quantity").default(1),
+  brand: varchar("brand", { length: 100 }),
+  tags: text("tags").array(),
   isPromoted: boolean("is_promoted").default(false),
+  isFeatured: boolean("is_featured").default(false),
   viewCount: integer("view_count").default(0),
+  favoriteCount: integer("favorite_count").default(0),
+  shippingInfo: text("shipping_info"),
+  returnPolicy: text("return_policy"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -146,6 +155,37 @@ export const userRatings = pgTable("user_ratings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Cart table for shopping cart functionality
+export const cart = pgTable("cart", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  listingId: integer("listing_id").references(() => listings.id).notNull(),
+  quantity: integer("quantity").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Wishlist table for saved items
+export const wishlist = pgTable("wishlist", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  listingId: integer("listing_id").references(() => listings.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Product reviews table (separate from user reviews)
+export const productReviews = pgTable("product_reviews", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  listingId: integer("listing_id").references(() => listings.id).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  title: varchar("title", { length: 200 }),
+  content: text("content").notNull(),
+  isVerified: boolean("is_verified").default(false), // For verified purchases
+  helpfulCount: integer("helpful_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   listings: many(listings),
@@ -157,6 +197,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   givenReviews: many(reviews, { relationName: "givenReviews" }),
   receivedReviews: many(reviews, { relationName: "receivedReviews" }),
   rating: one(userRatings, { fields: [users.id], references: [userRatings.userId] }),
+  cartItems: many(cart),
+  wishlistItems: many(wishlist),
+  productReviews: many(productReviews),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -171,6 +214,9 @@ export const listingsRelations = relations(listings, ({ one, many }) => ({
   reports: many(reports),
   comments: many(comments),
   reviews: many(reviews),
+  cartItems: many(cart),
+  wishlistItems: many(wishlist),
+  productReviews: many(productReviews),
 }));
 
 export const messagesRelations = relations(messages, ({ one }) => ({
@@ -209,6 +255,21 @@ export const userRatingsRelations = relations(userRatings, ({ one }) => ({
   user: one(users, { fields: [userRatings.userId], references: [users.id] }),
 }));
 
+export const cartRelations = relations(cart, ({ one }) => ({
+  user: one(users, { fields: [cart.userId], references: [users.id] }),
+  listing: one(listings, { fields: [cart.listingId], references: [listings.id] }),
+}));
+
+export const wishlistRelations = relations(wishlist, ({ one }) => ({
+  user: one(users, { fields: [wishlist.userId], references: [users.id] }),
+  listing: one(listings, { fields: [wishlist.listingId], references: [listings.id] }),
+}));
+
+export const productReviewsRelations = relations(productReviews, ({ one }) => ({
+  user: one(users, { fields: [productReviews.userId], references: [users.id] }),
+  listing: one(listings, { fields: [productReviews.listingId], references: [listings.id] }),
+}));
+
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertCategorySchema = createInsertSchema(categories);
@@ -219,6 +280,9 @@ export const insertCommentSchema = createInsertSchema(comments);
 export const insertForumPostSchema = createInsertSchema(forumPosts);
 export const insertReviewSchema = createInsertSchema(reviews);
 export const insertUserRatingSchema = createInsertSchema(userRatings);
+export const insertCartSchema = createInsertSchema(cart);
+export const insertWishlistSchema = createInsertSchema(wishlist);
+export const insertProductReviewSchema = createInsertSchema(productReviews);
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
@@ -239,6 +303,12 @@ export type Review = typeof reviews.$inferSelect;
 export type InsertReview = typeof reviews.$inferInsert;
 export type UserRating = typeof userRatings.$inferSelect;
 export type InsertUserRating = typeof userRatings.$inferInsert;
+export type Cart = typeof cart.$inferSelect;
+export type InsertCart = typeof cart.$inferInsert;
+export type Wishlist = typeof wishlist.$inferSelect;
+export type InsertWishlist = typeof wishlist.$inferInsert;
+export type ProductReview = typeof productReviews.$inferSelect;
+export type InsertProductReview = typeof productReviews.$inferInsert;
 
 // Extended types for API responses
 export type ListingWithDetails = Listing & {

@@ -428,6 +428,317 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed marketplace listings route
+  app.post("/api/seed/marketplace", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const categories = await storage.getCategories();
+      const mockListings = [];
+
+      // Housing category listings
+      const housingCategory = categories.find(c => c.name === "Housing");
+      if (housingCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: housingCategory.id,
+            title: "Modern Studio Apartment Downtown",
+            description: "Fully furnished studio apartment in the heart of downtown. Features include modern kitchen, high-speed internet, and access to gym facilities. Perfect for professionals or students.",
+            price: "850.00",
+            priceType: "fixed",
+            location: "Downtown District",
+            condition: "new",
+            brand: "Property Management Co.",
+            tags: ["furnished", "downtown", "studio", "modern"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Available for immediate move-in",
+            returnPolicy: "30-day satisfaction guarantee"
+          },
+          {
+            userId,
+            categoryId: housingCategory.id,
+            title: "Shared Room in Family Home",
+            description: "Comfortable shared room in a quiet family home. Includes utilities, WiFi, and access to common areas. Great for budget-conscious renters.",
+            price: "400.00",
+            priceType: "fixed",
+            location: "Residential Area",
+            condition: "good",
+            tags: ["shared", "family", "utilities-included", "budget"],
+            images: [],
+          }
+        );
+      }
+
+      // Food category listings
+      const foodCategory = categories.find(c => c.name === "Food");
+      if (foodCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: foodCategory.id,
+            title: "Weekly Meal Prep Service",
+            description: "Healthy, portion-controlled meals prepared fresh weekly. Choose from various dietary options including vegetarian, keto, and gluten-free.",
+            price: "8.50",
+            originalPrice: "10.00",
+            priceType: "fixed",
+            location: "Citywide Delivery",
+            condition: "new",
+            brand: "Fresh Meals Co.",
+            tags: ["healthy", "meal-prep", "delivery", "dietary-options"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Free delivery on orders over $50",
+            returnPolicy: "Full refund if not satisfied"
+          },
+          {
+            userId,
+            categoryId: foodCategory.id,
+            title: "Community Food Share Program",
+            description: "Free fresh produce and pantry items for families in need. Available every Saturday morning at the community center.",
+            price: "0.00",
+            priceType: "free",
+            location: "Community Center",
+            condition: "good",
+            tags: ["free", "community", "fresh-produce", "pantry"],
+            images: [],
+          }
+        );
+      }
+
+      // Employment category listings
+      const employmentCategory = categories.find(c => c.name === "Employment");
+      if (employmentCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: employmentCategory.id,
+            title: "Remote Data Entry Position",
+            description: "Flexible remote data entry position with competitive hourly pay. Perfect for students or those seeking part-time work. Training provided.",
+            price: "15.00",
+            priceType: "fixed",
+            location: "Remote Work",
+            condition: "new",
+            brand: "TechCorp Solutions",
+            tags: ["remote", "data-entry", "flexible", "part-time"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Equipment provided",
+            returnPolicy: "No commitment required"
+          },
+          {
+            userId,
+            categoryId: employmentCategory.id,
+            title: "Trades Apprenticeship Program",
+            description: "Paid apprenticeship program for electrical, plumbing, and HVAC trades. Earn while you learn with experienced professionals.",
+            price: "0.00",
+            priceType: "free",
+            location: "Training Center",
+            condition: "new",
+            tags: ["apprenticeship", "trades", "paid-training", "career"],
+            images: [],
+          }
+        );
+      }
+
+      // Healthcare category listings
+      const healthcareCategory = categories.find(c => c.name === "Healthcare");
+      if (healthcareCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: healthcareCategory.id,
+            title: "Affordable Health Checkup Package",
+            description: "Comprehensive health checkup package including blood work, physical exam, and consultation. Sliding scale pricing available.",
+            price: "150.00",
+            originalPrice: "200.00",
+            priceType: "negotiable",
+            location: "Health Clinic",
+            condition: "new",
+            brand: "Community Health Services",
+            tags: ["health", "checkup", "affordable", "comprehensive"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Same-day appointments available",
+            returnPolicy: "Satisfaction guaranteed"
+          },
+          {
+            userId,
+            categoryId: healthcareCategory.id,
+            title: "Free Mental Health Support Group",
+            description: "Weekly support group meetings for mental health and wellness. Professional facilitator and peer support in a safe environment.",
+            price: "0.00",
+            priceType: "free",
+            location: "Community Center",
+            condition: "new",
+            tags: ["mental-health", "support-group", "free", "weekly"],
+            images: [],
+          }
+        );
+      }
+
+      // Education category listings
+      const educationCategory = categories.find(c => c.name === "Education");
+      if (educationCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: educationCategory.id,
+            title: "Online Programming Bootcamp",
+            description: "Intensive 12-week online programming bootcamp covering modern web development. Job placement assistance included.",
+            price: "2500.00",
+            originalPrice: "3000.00",
+            priceType: "fixed",
+            location: "Online",
+            condition: "new",
+            brand: "CodeAcademy Pro",
+            tags: ["programming", "bootcamp", "online", "job-placement"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Digital course materials",
+            returnPolicy: "30-day money-back guarantee"
+          },
+          {
+            userId,
+            categoryId: educationCategory.id,
+            title: "Free Adult Literacy Classes",
+            description: "Free adult literacy and basic education classes. Small group settings with experienced instructors. Flexible scheduling available.",
+            price: "0.00",
+            priceType: "free",
+            location: "Library",
+            condition: "new",
+            tags: ["literacy", "education", "free", "adult-learning"],
+            images: [],
+          }
+        );
+      }
+
+      // Transportation category listings
+      const transportationCategory = categories.find(c => c.name === "Transportation");
+      if (transportationCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: transportationCategory.id,
+            title: "Monthly Transit Pass - Discounted",
+            description: "Discounted monthly public transit pass for eligible residents. Includes bus and light rail access throughout the city.",
+            price: "25.00",
+            originalPrice: "50.00",
+            priceType: "fixed",
+            location: "Transit Authority",
+            condition: "new",
+            brand: "City Transit",
+            tags: ["transit", "monthly-pass", "discounted", "public-transport"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Pick up at transit centers",
+            returnPolicy: "Refundable within 7 days"
+          },
+          {
+            userId,
+            categoryId: transportationCategory.id,
+            title: "Free Ride Share for Seniors",
+            description: "Free transportation service for seniors to medical appointments and essential errands. Volunteer drivers with background checks.",
+            price: "0.00",
+            priceType: "free",
+            location: "Citywide",
+            condition: "new",
+            tags: ["seniors", "free", "medical-transport", "volunteer"],
+            images: [],
+          }
+        );
+      }
+
+      // Legal Aid category listings
+      const legalCategory = categories.find(c => c.name === "Legal Aid");
+      if (legalCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: legalCategory.id,
+            title: "Document Preparation Service",
+            description: "Professional legal document preparation for wills, power of attorney, and other legal forms. Affordable rates with expert guidance.",
+            price: "75.00",
+            priceType: "fixed",
+            location: "Legal Office",
+            condition: "new",
+            brand: "Legal Aid Society",
+            tags: ["legal", "documents", "affordable", "professional"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Same-day service available",
+            returnPolicy: "Satisfaction guaranteed"
+          },
+          {
+            userId,
+            categoryId: legalCategory.id,
+            title: "Free Legal Consultation",
+            description: "Free 30-minute legal consultation for qualifying individuals. Covers housing, employment, and family law matters.",
+            price: "0.00",
+            priceType: "free",
+            location: "Legal Clinic",
+            condition: "new",
+            tags: ["free", "consultation", "legal-advice", "clinic"],
+            images: [],
+          }
+        );
+      }
+
+      // Community Services category listings
+      const communityCategory = categories.find(c => c.name === "Community Services");
+      if (communityCategory) {
+        mockListings.push(
+          {
+            userId,
+            categoryId: communityCategory.id,
+            title: "Volunteer Opportunity - Food Bank",
+            description: "Join our team of volunteers at the local food bank. Flexible scheduling and meaningful work helping community members in need.",
+            price: "0.00",
+            priceType: "free",
+            location: "Food Bank",
+            condition: "new",
+            tags: ["volunteer", "food-bank", "community", "flexible"],
+            images: [],
+            isFeatured: true,
+            shippingInfo: "Training provided",
+            returnPolicy: "No commitment required"
+          },
+          {
+            userId,
+            categoryId: communityCategory.id,
+            title: "Community Garden Plot Rental",
+            description: "Rent a plot in our community garden for the growing season. Includes water access, tools, and gardening workshops.",
+            price: "50.00",
+            priceType: "fixed",
+            location: "Community Garden",
+            condition: "good",
+            tags: ["garden", "rental", "community", "seasonal"],
+            images: [],
+          }
+        );
+      }
+
+      // Create all listings
+      for (const listingData of mockListings) {
+        await storage.createListing(listingData);
+      }
+
+      res.json({ 
+        message: `Successfully created ${mockListings.length} marketplace listings`,
+        count: mockListings.length 
+      });
+    } catch (error) {
+      console.error("Error seeding marketplace:", error);
+      res.status(500).json({ message: "Failed to seed marketplace" });
+    }
+  });
+
   // Seed forum posts route
   app.post("/api/seed/forum-posts", isAuthenticated, async (req: any, res) => {
     try {
@@ -1170,6 +1481,94 @@ Located next to courthouse for your convenience`,
     } catch (error) {
       console.error("Error fetching user rating:", error);
       res.status(500).json({ message: "Failed to fetch user rating" });
+    }
+  });
+
+  // Cart endpoints
+  app.get("/api/cart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const cartItems = await storage.getCartItems(userId);
+      res.json(cartItems);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+      res.status(500).json({ message: "Failed to fetch cart" });
+    }
+  });
+
+  app.get("/api/cart/count", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getCartItemsCount(userId);
+      res.json(count);
+    } catch (error) {
+      console.error("Error fetching cart count:", error);
+      res.status(500).json({ message: "Failed to fetch cart count" });
+    }
+  });
+
+  app.post("/api/cart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { listingId, quantity } = req.body;
+      
+      const cartItem = await storage.addToCart(userId, listingId, quantity);
+      res.json(cartItem);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      res.status(500).json({ message: "Failed to add to cart" });
+    }
+  });
+
+  app.patch("/api/cart/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const cartItemId = parseInt(req.params.id);
+      const { quantity } = req.body;
+      
+      const cartItem = await storage.updateCartItem(userId, cartItemId, quantity);
+      res.json(cartItem);
+    } catch (error) {
+      console.error("Error updating cart item:", error);
+      res.status(500).json({ message: "Failed to update cart item" });
+    }
+  });
+
+  app.delete("/api/cart/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const cartItemId = parseInt(req.params.id);
+      
+      await storage.removeFromCart(userId, cartItemId);
+      res.json({ message: "Item removed from cart" });
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+      res.status(500).json({ message: "Failed to remove from cart" });
+    }
+  });
+
+  // Wishlist endpoints
+  app.get("/api/wishlist", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const wishlistItems = await storage.getWishlistItems(userId);
+      res.json(wishlistItems.map(item => item.listingId));
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+      res.status(500).json({ message: "Failed to fetch wishlist" });
+    }
+  });
+
+  app.post("/api/wishlist/toggle", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { listingId } = req.body;
+      
+      const result = await storage.toggleWishlistItem(userId, listingId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling wishlist item:", error);
+      res.status(500).json({ message: "Failed to toggle wishlist item" });
     }
   });
 

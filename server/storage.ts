@@ -8,6 +8,8 @@ import {
   forumPosts,
   reviews,
   userRatings,
+  cart,
+  wishlist,
   type User,
   type UpsertUser,
   type Category,
@@ -104,6 +106,17 @@ export interface IStorage {
   getUserRating(userId: string): Promise<UserRating | undefined>;
   updateUserRating(userId: string, rating: Partial<InsertUserRating>): Promise<UserRating>;
   calculateUserRating(userId: string): Promise<void>;
+  
+  // Cart operations
+  getCartItems(userId: string): Promise<any[]>;
+  getCartItemsCount(userId: string): Promise<number>;
+  addToCart(userId: string, listingId: number, quantity: number): Promise<any>;
+  updateCartItem(userId: string, cartItemId: number, quantity: number): Promise<any>;
+  removeFromCart(userId: string, cartItemId: number): Promise<void>;
+  
+  // Wishlist operations
+  getWishlistItems(userId: string): Promise<any[]>;
+  toggleWishlistItem(userId: string, listingId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -796,6 +809,99 @@ export class DatabaseStorage implements IStorage {
       totalReviews,
       averageRating,
     });
+  }
+  
+  // Cart operations
+  async getCartItems(userId: string): Promise<any[]> {
+    const cartItems = await db.select({
+      id: cart.id,
+      quantity: cart.quantity,
+      createdAt: cart.createdAt,
+      listing: {
+        id: listings.id,
+        title: listings.title,
+        price: listings.price,
+        images: listings.images,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }
+      }
+    })
+    .from(cart)
+    .innerJoin(listings, eq(cart.listingId, listings.id))
+    .innerJoin(users, eq(listings.userId, users.id))
+    .where(eq(cart.userId, userId));
+    
+    return cartItems;
+  }
+  
+  async getCartItemsCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql`count(*)` }).from(cart).where(eq(cart.userId, userId));
+    return parseInt(result[0].count as string);
+  }
+  
+  async addToCart(userId: string, listingId: number, quantity: number): Promise<any> {
+    // Check if item already exists in cart
+    const existingItem = await db.select().from(cart).where(
+      and(eq(cart.userId, userId), eq(cart.listingId, listingId))
+    );
+    
+    if (existingItem.length > 0) {
+      // Update quantity
+      const [updatedItem] = await db
+        .update(cart)
+        .set({ quantity: existingItem[0].quantity + quantity })
+        .where(eq(cart.id, existingItem[0].id))
+        .returning();
+      return updatedItem;
+    } else {
+      // Add new item
+      const [newItem] = await db
+        .insert(cart)
+        .values({ userId, listingId, quantity })
+        .returning();
+      return newItem;
+    }
+  }
+  
+  async updateCartItem(userId: string, cartItemId: number, quantity: number): Promise<any> {
+    const [updatedItem] = await db
+      .update(cart)
+      .set({ quantity })
+      .where(and(eq(cart.id, cartItemId), eq(cart.userId, userId)))
+      .returning();
+    return updatedItem;
+  }
+  
+  async removeFromCart(userId: string, cartItemId: number): Promise<void> {
+    await db.delete(cart).where(and(eq(cart.id, cartItemId), eq(cart.userId, userId)));
+  }
+  
+  // Wishlist operations
+  async getWishlistItems(userId: string): Promise<any[]> {
+    const wishlistItems = await db.select().from(wishlist).where(eq(wishlist.userId, userId));
+    return wishlistItems;
+  }
+  
+  async toggleWishlistItem(userId: string, listingId: number): Promise<any> {
+    const existingItem = await db.select().from(wishlist).where(
+      and(eq(wishlist.userId, userId), eq(wishlist.listingId, listingId))
+    );
+    
+    if (existingItem.length > 0) {
+      // Remove from wishlist
+      await db.delete(wishlist).where(eq(wishlist.id, existingItem[0].id));
+      return { added: false, message: "Removed from wishlist" };
+    } else {
+      // Add to wishlist
+      const [newItem] = await db
+        .insert(wishlist)
+        .values({ userId, listingId })
+        .returning();
+      return { added: true, message: "Added to wishlist", item: newItem };
+    }
   }
 }
 
