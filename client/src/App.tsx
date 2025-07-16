@@ -17,6 +17,7 @@ import ForumPost from "@/pages/forum-post";
 import Categories from "@/pages/categories";
 import Resources from "@/pages/resources";
 import Navigation from "@/components/navigation";
+import MobileLayout from "@/components/mobile-layout";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,8 +31,7 @@ function Router() {
   }
 
   return (
-    <div className="min-h-screen bg-warm-gray">
-      <Navigation />
+    <MobileLayout>
       <Switch>
         {!isAuthenticated ? (
           <Route path="/" component={Landing} />
@@ -51,7 +51,7 @@ function Router() {
         )}
         <Route component={NotFound} />
       </Switch>
-    </div>
+    </MobileLayout>
   );
 }
 

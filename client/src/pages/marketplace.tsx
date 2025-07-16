@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import CategoryCard from "@/components/category-card";
+import MobileSearch from "@/components/mobile-search";
+import MobileProductCard from "@/components/mobile-product-card";
 import { apiRequest } from "@/lib/queryClient";
 import type { ListingWithDetails, Category } from "@shared/schema";
 
@@ -79,13 +81,13 @@ export default function Marketplace() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
-      if (selectedCategory) params.append("categoryId", selectedCategory);
+      if (selectedCategory && selectedCategory !== "all") params.append("categoryId", selectedCategory);
       if (priceRange.min) params.append("minPrice", priceRange.min);
       if (priceRange.max) params.append("maxPrice", priceRange.max);
-      if (condition) params.append("condition", condition);
+      if (condition && condition !== "any") params.append("condition", condition);
       if (brand) params.append("brand", brand);
       if (model) params.append("model", model);
-      if (size) params.append("size", size);
+      if (size && size !== "any") params.append("size", size);
       if (color) params.append("color", color);
       if (location.city) params.append("city", location.city);
       if (location.state) params.append("state", location.state);
@@ -212,7 +214,7 @@ export default function Marketplace() {
                           (!priceRange.max || price <= parseFloat(priceRange.max));
       
       // Condition filter
-      const matchesCondition = !condition || listing.condition === condition;
+      const matchesCondition = !condition || condition === "any" || listing.condition === condition;
       
       return matchesSearch && matchesTab && matchesPrice && matchesCondition;
     })
@@ -237,8 +239,48 @@ export default function Marketplace() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header */}
-      <section className="bg-white shadow-sm py-6 border-b">
+      {/* Mobile Search Component */}
+      <MobileSearch
+        search={search}
+        onSearchChange={setSearch}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        priceRange={priceRange}
+        onPriceRangeChange={setPriceRange}
+        condition={condition}
+        onConditionChange={setCondition}
+        brand={brand}
+        onBrandChange={setBrand}
+        size={size}
+        onSizeChange={setSize}
+        color={color}
+        onColorChange={setColor}
+        location={location}
+        onLocationChange={setLocation}
+        categories={categories}
+        onClearFilters={() => {
+          setSearch("");
+          setSelectedCategory("");
+          setCondition("");
+          setBrand("");
+          setModel("");
+          setSize("");
+          setColor("");
+          setPriceRange({ min: "", max: "" });
+          setLocation({
+            city: "",
+            state: "",
+            zipCode: "",
+            latitude: "",
+            longitude: "",
+            radius: "25"
+          });
+        }}
+        onGetLocation={getUserLocation}
+      />
+
+      {/* Desktop Header */}
+      <section className="hidden md:block bg-white shadow-sm py-6 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="mb-4 md:mb-0">
@@ -302,7 +344,7 @@ export default function Marketplace() {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
@@ -352,7 +394,7 @@ export default function Marketplace() {
                     <SelectValue placeholder="Condition" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any Condition</SelectItem>
+                    <SelectItem value="any">Any Condition</SelectItem>
                     <SelectItem value="new">New</SelectItem>
                     <SelectItem value="like_new">Like New</SelectItem>
                     <SelectItem value="good">Good</SelectItem>
@@ -417,7 +459,7 @@ export default function Marketplace() {
                       <SelectValue placeholder="Any size" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any size</SelectItem>
+                      <SelectItem value="any">Any size</SelectItem>
                       <SelectItem value="xs">XS</SelectItem>
                       <SelectItem value="s">S</SelectItem>
                       <SelectItem value="m">M</SelectItem>
@@ -630,22 +672,42 @@ export default function Marketplace() {
                 </Button>
               </div>
             ) : (
-              <div className={`grid gap-6 ${
-                viewMode === "grid" 
-                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-1"
-              }`}>
-                {filteredListings.map((listing) => (
-                  <ProductCard
-                    key={listing.id}
-                    listing={listing}
-                    viewMode={viewMode}
-                    onAddToCart={(listingId) => addToCartMutation.mutate(listingId)}
-                    onToggleWishlist={(listingId) => toggleWishlistMutation.mutate(listingId)}
-                    isInWishlist={wishlistItems.includes(listing.id)}
-                  />
-                ))}
+              <>
+                {/* Mobile Grid */}
+                <div className="md:hidden">
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredListings.map((listing) => (
+                    <MobileProductCard
+                      key={listing.id}
+                      listing={listing}
+                      onAddToCart={(listingId) => addToCartMutation.mutate(listingId)}
+                      onToggleWishlist={(listingId) => toggleWishlistMutation.mutate(listingId)}
+                      isInWishlist={wishlistItems.includes(listing.id)}
+                    />
+                  ))}
+                </div>
               </div>
+
+              {/* Desktop Grid */}
+              <div className="hidden md:block">
+                <div className={`grid gap-6 ${
+                  viewMode === "grid" 
+                    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                }`}>
+                  {filteredListings.map((listing) => (
+                    <ProductCard
+                      key={listing.id}
+                      listing={listing}
+                      viewMode={viewMode}
+                      onAddToCart={(listingId) => addToCartMutation.mutate(listingId)}
+                      onToggleWishlist={(listingId) => toggleWishlistMutation.mutate(listingId)}
+                      isInWishlist={wishlistItems.includes(listing.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+              </>
             )}
           </CardContent>
         </Card>

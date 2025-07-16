@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, TrendingUp, Users, MessageSquare, Search } from "lucide-react";
+import { Plus, TrendingUp, Users, MessageSquare, Search, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import ListingCard from "@/components/listing-card";
 import CategoryCard from "@/components/category-card";
 import SearchBar from "@/components/search-bar";
+import MobileProductCard from "@/components/mobile-product-card";
 import type { ListingWithDetails, Category } from "@shared/schema";
 
 export default function Home() {
@@ -128,14 +129,29 @@ export default function Home() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-primary">Your Recent Listings</CardTitle>
               <Link href="/profile">
-                <Button variant="outline" size="sm">View All</Button>
+                <Button variant="outline" size="sm">
+                  <span className="hidden sm:inline">View All</span>
+                  <ArrowRight className="h-4 w-4 sm:ml-2" />
+                </Button>
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {userListings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
+              {/* Mobile Layout */}
+              <div className="md:hidden">
+                <div className="grid grid-cols-2 gap-3">
+                  {userListings.map((listing) => (
+                    <MobileProductCard key={listing.id} listing={listing} />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Desktop Layout */}
+              <div className="hidden md:block">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {userListings.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} />
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -146,14 +162,29 @@ export default function Home() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-primary">Featured Listings</CardTitle>
             <Link href="/marketplace">
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm">
+                <span className="hidden sm:inline">View All</span>
+                <ArrowRight className="h-4 w-4 sm:ml-2" />
+              </Button>
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
+            {/* Mobile Layout */}
+            <div className="md:hidden">
+              <div className="grid grid-cols-2 gap-3">
+                {featuredListings.map((listing) => (
+                  <MobileProductCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+            </div>
+            
+            {/* Desktop Layout */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredListings.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} />
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
