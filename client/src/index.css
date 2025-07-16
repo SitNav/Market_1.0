@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(150, 50%, 15%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(150, 50%, 15%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(150, 50%, 15%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(150, 50%, 15%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(78, 50%, 45%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(28, 80%, 45%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(150, 50%, 15%);
+  --radius: 0.5rem;
+  --warm-gray: hsl(0, 0%, 98%);
+  --neutral-gray: hsl(220, 13%, 42%);
+}
+
+.dark {
+  --background: hsl(150, 20%, 8%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(150, 10%, 12%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(150, 20%, 8%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(150, 15%, 10%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(150, 10%, 15%);
+  --input: hsl(150, 10%, 15%);
+  --primary: hsl(78, 50%, 45%);
+  --primary-foreground: hsl(150, 20%, 8%);
+  --secondary: hsl(150, 10%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(28, 80%, 45%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(78, 50%, 45%);
+  --radius: 0.5rem;
+  --warm-gray: hsl(150, 10%, 12%);
+  --neutral-gray: hsl(220, 13%, 65%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .terra-gradient {
+    background: linear-gradient(135deg, hsl(150, 50%, 15%) 0%, hsl(78, 50%, 45%) 100%);
+  }
+  
+  .terra-shadow {
+    box-shadow: 0 4px 6px -1px rgba(30, 74, 58, 0.1), 0 2px 4px -1px rgba(30, 74, 58, 0.06);
+  }
+  
+  .terra-hover {
+    @apply hover:shadow-lg transition-all duration-300;
+  }
+}
