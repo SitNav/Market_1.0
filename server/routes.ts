@@ -428,6 +428,577 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed forum posts route
+  app.post("/api/seed/forum-posts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const categories = await storage.getCategories();
+      const mockPosts = [];
+
+      // Housing category posts
+      const housingCategory = categories.find(c => c.name === "Housing");
+      if (housingCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: housingCategory.id,
+            title: "🏠 Affordable 2BR Apartment - $850/month",
+            content: `Looking for a comfortable 2-bedroom apartment in downtown area. Recently renovated with:
+• Modern kitchen with stainless steel appliances
+• In-unit washer/dryer
+• Parking space included
+• Pet-friendly building
+• Near public transportation
+
+**Rent: $850/month**
+**Deposit: $500**
+**Available: Immediately**
+
+Contact me for viewing appointments!`,
+            productRating: 4,
+          },
+          {
+            userId,
+            categoryId: housingCategory.id,
+            title: "🏡 Room for Rent in Shared House - $400/month",
+            content: `Nice room available in a clean, quiet shared house. Perfect for students or young professionals.
+
+**Features:**
+• Furnished bedroom
+• Shared kitchen and living room
+• Utilities included
+• WiFi included
+• Laundry facilities
+• Safe neighborhood
+
+**Monthly Rent: $400**
+**Security deposit: $200**
+**Available: Next month**
+
+Looking for responsible, clean tenant. No smoking, no pets.`,
+            productRating: 4,
+          }
+        );
+      }
+
+      // Food category posts
+      const foodCategory = categories.find(c => c.name === "Food");
+      if (foodCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: foodCategory.id,
+            title: "🍕 Local Food Bank - Free Meals Available",
+            content: `Our community food bank provides free meals and groceries to families in need.
+
+**Services Available:**
+• Hot meals (Mon-Fri, 12-2 PM)
+• Grocery packages (Saturdays, 9 AM-12 PM)
+• Fresh produce when available
+• Baby food and formula
+• Special dietary accommodations
+
+**Location:** 123 Community Center Dr.
+**No income verification required**
+**Just bring ID and proof of address**
+
+We're here to help during difficult times. No questions asked, just support.`,
+            productRating: 5,
+          },
+          {
+            userId,
+            categoryId: foodCategory.id,
+            title: "🥗 Healthy Meal Prep Service - $8/meal",
+            content: `Professional meal prep service offering nutritious, affordable meals delivered to your door.
+
+**Meal Plans:**
+• 5 meals/week: $40 ($8/meal)
+• 10 meals/week: $75 ($7.50/meal)
+• 15 meals/week: $105 ($7/meal)
+
+**Features:**
+• Fresh, locally-sourced ingredients
+• Customizable dietary preferences
+• Vegetarian, vegan, gluten-free options
+• Delivered twice weekly
+• Recyclable packaging
+
+**Special discount for seniors and students: 20% off**
+Order by Wednesday for next week delivery!`,
+            productRating: 5,
+          }
+        );
+      }
+
+      // Employment category posts
+      const employmentCategory = categories.find(c => c.name === "Employment");
+      if (employmentCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: employmentCategory.id,
+            title: "💼 Part-time Customer Service - $15/hour",
+            content: `Local retail store hiring part-time customer service representatives.
+
+**Position Details:**
+• 20-25 hours per week
+• Flexible scheduling
+• Evening and weekend availability required
+• No experience necessary - will train
+
+**Requirements:**
+• High school diploma or equivalent
+• Good communication skills
+• Reliable transportation
+• Able to stand for extended periods
+
+**Benefits:**
+• $15/hour starting wage
+• Employee discount
+• Flexible scheduling
+• Growth opportunities
+
+Apply in person at our downtown location or call (555) 123-4567`,
+            productRating: 4,
+          },
+          {
+            userId,
+            categoryId: employmentCategory.id,
+            title: "🔧 Skilled Trades Training Program - FREE",
+            content: `6-month free training program for electrical, plumbing, and HVAC trades.
+
+**Program Includes:**
+• 240 hours of hands-on training
+• Industry-standard certifications
+• Job placement assistance
+• Tool lending program
+• Transportation vouchers
+
+**Requirements:**
+• 18+ years old
+• High school diploma/GED
+• Pass basic math and reading assessment
+• Background check
+
+**Starting Salary After Completion:**
+• Electrical: $22-28/hour
+• Plumbing: $20-26/hour
+• HVAC: $18-24/hour
+
+**Next enrollment:** March 1st
+**Application deadline:** February 15th
+Apply online or visit our center!`,
+            productRating: 5,
+          }
+        );
+      }
+
+      // Healthcare category posts
+      const healthcareCategory = categories.find(c => c.name === "Healthcare");
+      if (healthcareCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: healthcareCategory.id,
+            title: "🏥 Free Health Clinic - Walk-ins Welcome",
+            content: `Community health clinic providing free medical services to uninsured individuals and families.
+
+**Services Offered:**
+• Primary care consultations
+• Preventive screenings
+• Vaccination programs
+• Basic dental care
+• Mental health counseling
+• Prescription assistance program
+
+**Hours:**
+• Monday-Friday: 8 AM - 6 PM
+• Saturday: 9 AM - 2 PM
+• Emergency services: 24/7
+
+**What to Bring:**
+• Photo ID
+• Proof of income (if available)
+• List of current medications
+• Insurance card (if you have one)
+
+**Location:** 456 Health Center Blvd.
+**Phone:** (555) 987-6543
+No appointment necessary for basic services!`,
+            productRating: 5,
+          },
+          {
+            userId,
+            categoryId: healthcareCategory.id,
+            title: "💊 Affordable Prescription Program",
+            content: `Discounted prescription medications for low-income residents.
+
+**Savings:**
+• Generic medications: Up to 80% off
+• Brand name drugs: Up to 60% off
+• Insulin: Starting at $35/month
+• Common antibiotics: $4-10
+
+**Eligibility:**
+• Household income below 200% of federal poverty level
+• No insurance or high deductible plans
+• Must be US resident
+
+**How to Apply:**
+1. Fill out income verification form
+2. Bring recent pay stubs or tax return
+3. Get doctor's prescription
+4. Pick up at participating pharmacies
+
+**Processing time:** 2-3 business days
+**Annual membership:** $20/family
+Call (555) 456-7890 for more information`,
+            productRating: 4,
+          }
+        );
+      }
+
+      // Education category posts
+      const educationCategory = categories.find(c => c.name === "Education");
+      if (educationCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: educationCategory.id,
+            title: "📚 Free GED Preparation Classes",
+            content: `Comprehensive GED preparation program to help you earn your high school equivalency diploma.
+
+**Program Features:**
+• 12-week intensive course
+• All four subject areas covered
+• Small class sizes (max 15 students)
+• Experienced instructors
+• Free materials and practice tests
+• Flexible evening schedule
+
+**Class Schedule:**
+• Monday/Wednesday: 6-8 PM (Math & Science)
+• Tuesday/Thursday: 6-8 PM (English & Social Studies)
+• Saturday: 9 AM-12 PM (Review & Practice Tests)
+
+**Requirements:**
+• Must be 18+ years old
+• Not currently enrolled in high school
+• Commitment to attend regularly
+
+**Success Rate:** 85% of students pass on first attempt
+**Next session starts:** January 15th
+**Registration deadline:** January 8th
+Call (555) 234-5678 to register!`,
+            productRating: 5,
+          },
+          {
+            userId,
+            categoryId: educationCategory.id,
+            title: "💻 Computer Skills Workshop - $25/session",
+            content: `Basic computer and internet skills workshop for beginners.
+
+**Workshop Topics:**
+• Basic computer operation
+• Internet browsing and email
+• Microsoft Office basics
+• Online job applications
+• Social media safety
+• Digital banking basics
+
+**Session Details:**
+• 2-hour sessions
+• Hands-on practice
+• Take-home materials
+• Small group setting (8 people max)
+• Laptops provided
+
+**Pricing:**
+• Single session: $25
+• 4-session package: $80 (save $20)
+• 8-session complete course: $150 (save $50)
+
+**Scholarships available** for those who qualify
+**Next workshop:** This Saturday 10 AM-12 PM
+Register at community center or call (555) 345-6789`,
+            productRating: 4,
+          }
+        );
+      }
+
+      // Transportation category posts
+      const transportationCategory = categories.find(c => c.name === "Transportation");
+      if (transportationCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: transportationCategory.id,
+            title: "🚗 Free Transportation to Medical Appointments",
+            content: `Volunteer-driven transportation service for medical appointments and essential errands.
+
+**Services Provided:**
+• Doctor appointments
+• Hospital visits
+• Pharmacy trips
+• Grocery shopping
+• Social services appointments
+
+**Service Area:**
+• City limits and surrounding areas
+• Up to 20 miles from downtown
+• Wheelchair accessible vehicles available
+
+**How to Schedule:**
+• Call at least 48 hours in advance
+• Provide appointment details
+• Confirm pickup location
+• Be ready 15 minutes early
+
+**Eligibility:**
+• Seniors 65+
+• Individuals with disabilities
+• Low-income households
+• No reliable transportation
+
+**Phone:** (555) 567-8901
+**Hours:** Monday-Friday, 8 AM-5 PM
+**100% FREE SERVICE** - donations welcome but not required`,
+            productRating: 5,
+          },
+          {
+            userId,
+            categoryId: transportationCategory.id,
+            title: "🚌 Discounted Bus Passes Available",
+            content: `Reduced-fare public transportation passes for qualifying residents.
+
+**Available Passes:**
+• Monthly pass: $15 (regular price $50)
+• Weekly pass: $5 (regular price $15)
+• Daily pass: $1 (regular price $3)
+• Student pass: $10/month (with valid ID)
+
+**Eligibility:**
+• Household income below 150% of poverty level
+• Senior citizens 65+
+• Disabled individuals
+• Students with valid ID
+
+**Required Documents:**
+• Photo ID
+• Proof of income or benefits
+• Proof of residence
+• Student ID (if applicable)
+
+**Where to Apply:**
+• Transportation Authority Office
+• Community service centers
+• Online application available
+
+**Processing Time:** 5-7 business days
+**Renewal:** Required every 6 months
+Visit transportationauthority.com for more details`,
+            productRating: 4,
+          }
+        );
+      }
+
+      // Legal Aid category posts
+      const legalCategory = categories.find(c => c.name === "Legal Aid");
+      if (legalCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: legalCategory.id,
+            title: "⚖️ Free Legal Consultation - Housing Rights",
+            content: `Free legal advice and representation for housing-related issues.
+
+**Services Offered:**
+• Landlord-tenant disputes
+• Eviction defense
+• Housing discrimination
+• Lease review and negotiation
+• Security deposit recovery
+• Habitability issues
+
+**Consultation Process:**
+• 30-minute free consultation
+• Case evaluation
+• Legal advice and options
+• Court representation if needed
+• Document preparation assistance
+
+**Eligibility:**
+• Income below 200% of federal poverty level
+• Legal issue within our service area
+• Not currently represented by another attorney
+
+**Office Hours:**
+• Monday-Friday: 9 AM-5 PM
+• Saturday: 10 AM-2 PM (appointments only)
+• Emergency consultations available
+
+**Contact:**
+• Phone: (555) 678-9012
+• Walk-ins welcome Tuesday/Thursday 1-4 PM
+• Online scheduling available
+Located at 789 Justice Center Dr.`,
+            productRating: 5,
+          },
+          {
+            userId,
+            categoryId: legalCategory.id,
+            title: "📝 Document Preparation Service - $50-150",
+            content: `Affordable legal document preparation for common legal needs.
+
+**Documents We Prepare:**
+• Wills and basic estate planning: $75
+• Power of attorney: $50
+• Living wills/advance directives: $50
+• Divorce papers (uncontested): $150
+• Name change petitions: $100
+• Small claims court filings: $75
+
+**Process:**
+1. Initial consultation (free)
+2. Document review and preparation
+3. Notarization service included
+4. Filing assistance available
+
+**What's Included:**
+• Professional document drafting
+• Legal guidance on completion
+• Notary services
+• Basic filing instructions
+• One revision included
+
+**Payment Plans Available**
+**Senior/Student Discount:** 20% off
+**Office Hours:** Monday-Friday 9 AM-5 PM
+**Appointments:** Call (555) 789-0123
+Located next to courthouse for your convenience`,
+            productRating: 4,
+          }
+        );
+      }
+
+      // Community Services category posts
+      const communityCategory = categories.find(c => c.name === "Community Services");
+      if (communityCategory) {
+        mockPosts.push(
+          {
+            userId,
+            categoryId: communityCategory.id,
+            title: "🤝 Volunteer Opportunities - Give Back to Community",
+            content: `Multiple volunteer opportunities available to help your neighbors in need.
+
+**Current Needs:**
+• Food bank sorting and distribution
+• Tutoring and mentoring
+• Senior companion visits
+• Community garden maintenance
+• Event planning and coordination
+• Transportation assistance
+
+**Time Commitments:**
+• One-time events: 2-4 hours
+• Regular volunteer: 2-3 hours/week
+• Specialized skills: Flexible schedule
+• Group volunteering welcome
+
+**Benefits of Volunteering:**
+• Make a real difference in your community
+• Meet like-minded people
+• Develop new skills
+• Build professional network
+• Feel-good factor
+
+**Training Provided:**
+• Orientation session
+• Skill-specific training
+• Ongoing support
+• Recognition events
+
+**How to Get Started:**
+1. Attend orientation (every 2nd Saturday)
+2. Complete background check
+3. Choose your volunteer role
+4. Start making a difference!
+
+**Contact:** volunteer@communityservices.org
+**Phone:** (555) 890-1234`,
+            productRating: 5,
+          },
+          {
+            userId,
+            categoryId: communityCategory.id,
+            title: "🎒 Back-to-School Supply Drive - Donations Needed",
+            content: `Annual school supply drive to help local students start the year prepared.
+
+**Items Needed:**
+• Backpacks and lunch boxes
+• Notebooks and composition books
+• Pens, pencils, and markers
+• Calculators and rulers
+• Binders and folders
+• Art supplies
+• Gift cards to office supply stores
+
+**Donation Guidelines:**
+• New items only
+• Age-appropriate supplies
+• Check current school supply lists
+• Monetary donations welcome
+
+**Distribution Details:**
+• Serves 500+ local students
+• K-12 grade levels
+• No income verification required
+• First-come, first-served basis
+
+**Drop-off Locations:**
+• Community center main desk
+• Local churches and schools
+• Corporate partner locations
+• Volunteers can pick up large donations
+
+**Timeline:**
+• Collection: July 1-31
+• Sorting: August 1-7
+• Distribution: August 8-15
+
+**Volunteer Opportunities:**
+• Collection coordination
+• Sorting and organizing
+• Distribution day assistance
+
+**Impact:** Last year we helped 487 students!
+**Contact:** schoolsupplies@community.org`,
+            productRating: 5,
+          }
+        );
+      }
+
+      // Create all posts
+      for (const postData of mockPosts) {
+        await storage.createForumPost(postData);
+      }
+
+      res.json({ 
+        message: `Successfully created ${mockPosts.length} mock forum posts`,
+        count: mockPosts.length 
+      });
+    } catch (error) {
+      console.error("Error seeding forum posts:", error);
+      res.status(500).json({ message: "Failed to seed forum posts" });
+    }
+  });
+
   // Forum routes
   app.get("/api/forum/posts", async (req, res) => {
     try {
