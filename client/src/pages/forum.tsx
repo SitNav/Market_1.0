@@ -277,54 +277,27 @@ export default function Forum() {
               </Card>
 
               {/* Categories */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Categories</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="grid grid-cols-1 gap-2">
-                    <button
-                      onClick={() => setSelectedCategory("all")}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        selectedCategory === "all"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5"
-                      }`}
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={selectedCategory === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory("all")}
+                  >
+                    All Posts
+                  </Button>
+                  {categories.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id.toString() ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category.id.toString())}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Hash className="w-4 h-4" />
-                          <span className="font-medium">All Posts</span>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {forumPosts.length}
-                        </span>
-                      </div>
-                    </button>
-                    {categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => setSelectedCategory(category.id.toString())}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          selectedCategory === category.id.toString()
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Hash className="w-4 h-4" />
-                            <span className="font-medium">{category.name}</span>
-                          </div>
-                          <span className="text-sm text-gray-500">
-                            {forumPosts.filter(post => post.category?.id === category.id).length}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      {category.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
 
               {/* Quick Stats */}
               <Card>
