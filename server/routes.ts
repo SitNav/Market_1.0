@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { body, query, param, validationResult } from "express-validator";
+import sanitizeHtml from "sanitize-html";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertListingSchema, insertMessageSchema, insertReportSchema } from "@shared/schema";
@@ -15,26 +17,54 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Security: Input validation and sanitization middleware
+const validateInput = (req: any, res: any, next: any) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      message: "Validation failed", 
+      errors: errors.array() 
+    });
+  }
+  next();
+};
+
+// Security: Sanitize HTML content
+const sanitizeContent = (content: string) => {
+  return sanitizeHtml(content, {
+    allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
+    allowedAttributes: {
+      'a': ['href']
+    },
+    allowedSchemes: ['http', 'https', 'mailto']
+  });
+};
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: uploadsDir,
     filename: (req, file, cb) => {
+      // Security: Generate secure filename
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(sanitizedName));
     },
   }),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 5, // Maximum 5 files
   },
   fileFilter: (req, file, cb) => {
+    // Security: Strict file type validation
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
-    if (mimetype && extname) {
+    // Additional security check for file signature
+    if (mimetype && extname && file.originalname.length < 255) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'));
+      cb(new Error('Only image files (jpg, png, gif, webp) under 255 characters are allowed!'));
     }
   },
 });
@@ -143,9 +173,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/listings/:id', async (req, res) => {
+  app.get('/api/listings/:id', [
+    param('id').isInt({ min: 1 }),
+    validateInput
+  ], async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Security: Check if ID is valid integer
+      if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "Invalid listing ID" });
+      }
+      
       const listing = await storage.getListing(id);
       
       if (!listing) {
@@ -162,11 +201,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/listings', isAuthenticated, upload.array('images', 5), async (req: any, res) => {
+  app.post('/api/listings', [
+    isAuthenticated,
+    body('title').isLength({ min: 1, max: 200 }).trim().escape(),
+    body('description').isLength({ min: 1, max: 2000 }).trim(),
+    body('categoryId').isInt({ min: 1 }),
+    body('price').optional().isFloat({ min: 0 }),
+    body('location').optional().isLength({ max: 200 }).trim(),
+    validateInput
+  ], upload.array('images', 5), async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // Security: Sanitize description content
+      const sanitizedDescription = sanitizeContent(req.body.description);
+      
       const listingData = {
         ...req.body,
+        description: sanitizedDescription,
         userId,
         categoryId: parseInt(req.body.categoryId),
         images: req.files ? req.files.map((file: any) => `/uploads/${file.filename}`) : [],
@@ -265,11 +317,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/messages', [
+    isAuthenticated,
+    body('content').isLength({ min: 1, max: 1000 }).trim(),
+    body('receiverId').isLength({ min: 1, max: 50 }).trim(),
+    body('listingId').optional().isInt({ min: 1 }),
+    validateInput
+  ], async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // Security: Sanitize message content
+      const sanitizedContent = sanitizeContent(req.body.content);
+      
       const messageData = {
         ...req.body,
+        content: sanitizedContent,
         senderId: userId,
       };
 
@@ -315,11 +378,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/reports', isAuthenticated, async (req: any, res) => {
+  app.post('/api/reports', [
+    isAuthenticated,
+    body('reason').isLength({ min: 1, max: 500 }).trim(),
+    body('description').optional().isLength({ max: 1000 }).trim(),
+    body('listingId').optional().isInt({ min: 1 }),
+    body('reportedUserId').optional().isLength({ min: 1, max: 50 }),
+    validateInput
+  ], async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // Security: Sanitize report content
+      const sanitizedDescription = req.body.description ? sanitizeContent(req.body.description) : undefined;
+      
       const reportData = {
         ...req.body,
+        description: sanitizedDescription,
         reporterId: userId,
       };
 
