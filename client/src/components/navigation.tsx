@@ -61,13 +61,14 @@ export default function Navigation() {
           <Link key={item.href} href={item.href}>
             <Button
               variant="ghost"
+              size="sm"
               className={`${
                 isActive 
-                  ? "text-primary bg-primary/10 border-primary/20" 
+                  ? "text-primary bg-primary/10" 
                   : "text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-primary/5"
               } transition-all duration-200 ${
-                mobile ? "w-full justify-start" : "px-4 py-2"
-              } ${isActive ? "border-b-2 border-primary" : ""}`}
+                mobile ? "w-full justify-start" : "px-3 py-2"
+              } text-sm font-medium`}
             >
               <Icon className="w-4 h-4 mr-2" />
               {item.label}
@@ -79,107 +80,82 @@ export default function Navigation() {
   );
 
   return (
-    <nav className="bg-gradient-to-r from-white via-blue-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 backdrop-blur-sm">
+    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/">
-            <div className="flex items-center space-x-3 cursor-pointer hover:scale-105 transition-transform duration-200">
-              <div className="relative">
-                <Logo className="h-12 w-12 drop-shadow-md" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              </div>
+            <div className="flex items-center space-x-2 cursor-pointer">
+              <Logo className="h-8 w-8" />
               <div>
-                <h1 className="text-xl font-bold text-primary bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  TerraNav Solutions
-                </h1>
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                  Helping You Navigate Forward
-                </p>
+                <h1 className="text-lg font-bold text-primary">TerraNav Solutions</h1>
+                <p className="text-xs text-neutral-gray">Helping You Navigate Forward</p>
               </div>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-md border border-gray-100 dark:border-gray-700">
+          <div className="hidden md:flex items-center space-x-6">
             {isAuthenticated && <NavItems />}
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             {isLoading ? (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
             ) : isAuthenticated ? (
               <>
-                {/* Notifications */}
-                <Button variant="ghost" size="sm" className="relative hover:bg-primary/10 transition-colors">
-                  <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                  <Badge className="absolute -top-1 -right-1 w-5 h-5 text-xs bg-red-500 hover:bg-red-500">
-                    3
-                  </Badge>
-                </Button>
-
-                {/* Create Listing */}
                 <Link href="/create-listing">
-                  <Button className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-500 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+                  <Button className="bg-secondary hover:bg-secondary/90 text-white text-sm">
                     <Plus className="h-4 w-4 mr-2" />
                     List Item
                   </Button>
                 </Link>
                 
-                {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-primary/20 transition-all duration-200">
-                      <UserAvatar user={user} className="h-10 w-10 ring-2 ring-white shadow-md" />
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <UserAvatar user={user} className="h-8 w-8" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64 shadow-xl border-0" align="end" forceMount>
-                    <div className="flex items-center justify-start gap-3 p-4 bg-gradient-to-r from-primary/10 to-blue-50 dark:from-primary/20 dark:to-blue-900/20">
-                      <UserAvatar user={user} className="h-12 w-12 ring-2 ring-white shadow-md" />
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          {user?.email}
-                        </p>
+                        <p className="font-medium text-sm">{user?.firstName} {user?.lastName}</p>
+                        <p className="text-xs text-neutral-gray">{user?.email}</p>
                       </div>
                     </div>
                     <DropdownMenuSeparator />
                     <Link href="/profile">
-                      <DropdownMenuItem className="hover:bg-primary/5 py-3">
-                        <User className="mr-3 h-4 w-4 text-primary" />
-                        <span className="font-medium">Profile</span>
+                      <DropdownMenuItem>
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
                       </DropdownMenuItem>
                     </Link>
                     <Link href="/marketplace">
-                      <DropdownMenuItem className="hover:bg-primary/5 py-3">
-                        <Store className="mr-3 h-4 w-4 text-primary" />
-                        <span className="font-medium">Marketplace</span>
+                      <DropdownMenuItem>
+                        <Search className="mr-2 h-4 w-4" />
+                        Marketplace
                       </DropdownMenuItem>
                     </Link>
                     {user?.isAdmin && (
                       <Link href="/admin">
-                        <DropdownMenuItem className="hover:bg-primary/5 py-3">
-                          <Shield className="mr-3 h-4 w-4 text-primary" />
-                          <span className="font-medium">Admin Dashboard</span>
+                        <DropdownMenuItem>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Dashboard
                         </DropdownMenuItem>
                       </Link>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="hover:bg-red-50 dark:hover:bg-red-900/20 py-3">
-                      <LogOut className="mr-3 h-4 w-4 text-red-500" />
-                      <span className="font-medium text-red-600 dark:text-red-400">Sign Out</span>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
             ) : (
-              <Button 
-                onClick={handleLogin} 
-                className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-500 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              >
+              <Button onClick={handleLogin} className="text-primary border-primary hover:bg-primary hover:text-white">
                 Sign In
               </Button>
             )}
@@ -188,21 +164,18 @@ export default function Navigation() {
             <div className="md:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                  <Button variant="ghost" size="sm">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+                <SheetContent side="right" className="w-[300px]">
                   <SheetHeader>
-                    <SheetTitle className="text-xl font-semibold text-primary">Menu</SheetTitle>
+                    <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-8 space-y-3">
+                  <div className="mt-6 space-y-2">
                     {isAuthenticated && <NavItems mobile />}
                     {!isAuthenticated && (
-                      <Button 
-                        onClick={handleLogin} 
-                        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-500 text-white shadow-lg"
-                      >
+                      <Button onClick={handleLogin} className="w-full">
                         Sign In
                       </Button>
                     )}
