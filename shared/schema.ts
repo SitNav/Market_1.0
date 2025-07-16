@@ -115,6 +115,8 @@ export const forumPosts = pgTable("forum_posts", {
   categoryId: integer("category_id").references(() => categories.id),
   title: text("title").notNull(),
   content: text("content").notNull(),
+  productRating: integer("product_rating"), // 1-5 stars for product reviews
+  productImage: text("product_image"), // URL for product images
   isPinned: boolean("is_pinned").default(false),
   isLocked: boolean("is_locked").default(false),
   viewCount: integer("view_count").default(0),
