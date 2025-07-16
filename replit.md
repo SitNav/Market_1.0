@@ -7,6 +7,7 @@ This is a full-stack web application built as a marketplace platform for communi
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Skip Stripe payment integration until the end of the development process.
 
 ## System Architecture
 
@@ -99,3 +100,13 @@ Preferred communication style: Simple, everyday language.
 - `ISSUER_URL`: OIDC issuer endpoint
 
 The architecture emphasizes type safety, real-time updates, and a smooth user experience while maintaining security through proper authentication and session management.
+
+## Recent Changes
+
+### July 16, 2025
+- ✅ Fixed application startup and database connectivity issues
+- ✅ Integrated TerraNav Services company logo throughout the application
+- ✅ Resolved authentication system infinite loop issues
+- ✅ Seeded database with essential categories (housing, food, employment, healthcare, education, transportation, legal aid, community services)
+- ✅ Application successfully running with full marketplace functionality
+- ✅ All core features operational: user auth, listings, search, admin dashboard
