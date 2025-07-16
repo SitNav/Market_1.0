@@ -55,6 +55,20 @@ export interface IStorage {
     userId?: string; 
     search?: string; 
     status?: string;
+    condition?: string;
+    brand?: string;
+    model?: string;
+    size?: string;
+    color?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    latitude?: string;
+    longitude?: string;
+    radius?: number;
+    sortBy?: string;
     limit?: number;
     offset?: number;
   }): Promise<ListingWithDetails[]>;
@@ -178,7 +192,28 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
     offset?: number;
   }): Promise<ListingWithDetails[]> {
-    const { categoryId, userId, search, status = 'active', limit = 20, offset = 0 } = params || {};
+    const { 
+      categoryId, 
+      userId, 
+      search, 
+      status = 'active', 
+      condition,
+      brand,
+      model,
+      size,
+      color,
+      minPrice,
+      maxPrice,
+      city,
+      state,
+      zipCode,
+      latitude,
+      longitude,
+      radius,
+      sortBy = 'newest',
+      limit = 20, 
+      offset = 0 
+    } = params || {};
     
     const baseQuery = db
       .select({
@@ -190,6 +225,18 @@ export class DatabaseStorage implements IStorage {
         price: listings.price,
         priceType: listings.priceType,
         location: listings.location,
+        city: listings.city,
+        state: listings.state,
+        zipCode: listings.zipCode,
+        latitude: listings.latitude,
+        longitude: listings.longitude,
+        condition: listings.condition,
+        brand: listings.brand,
+        model: listings.model,
+        size: listings.size,
+        color: listings.color,
+        weight: listings.weight,
+        dimensions: listings.dimensions,
         images: listings.images,
         status: listings.status,
         isPromoted: listings.isPromoted,
@@ -233,8 +280,68 @@ export class DatabaseStorage implements IStorage {
       conditions.push(
         or(
           like(listings.title, `%${search}%`),
-          like(listings.description, `%${search}%`)
+          like(listings.description, `%${search}%`),
+          like(listings.location, `%${search}%`),
+          like(listings.brand, `%${search}%`),
+          like(listings.model, `%${search}%`),
+          like(listings.city, `%${search}%`),
+          like(listings.state, `%${search}%`)
         )
+      );
+    }
+    
+    if (condition) {
+      conditions.push(eq(listings.condition, condition));
+    }
+    
+    if (brand) {
+      conditions.push(eq(listings.brand, brand));
+    }
+    
+    if (model) {
+      conditions.push(eq(listings.model, model));
+    }
+    
+    if (size) {
+      conditions.push(eq(listings.size, size));
+    }
+    
+    if (color) {
+      conditions.push(eq(listings.color, color));
+    }
+    
+    if (minPrice !== undefined) {
+      conditions.push(sql`${listings.price} >= ${minPrice}`);
+    }
+    
+    if (maxPrice !== undefined) {
+      conditions.push(sql`${listings.price} <= ${maxPrice}`);
+    }
+    
+    if (city) {
+      conditions.push(eq(listings.city, city));
+    }
+    
+    if (state) {
+      conditions.push(eq(listings.state, state));
+    }
+    
+    if (zipCode) {
+      conditions.push(eq(listings.zipCode, zipCode));
+    }
+    
+    // Location-based search using radius
+    if (latitude && longitude && radius) {
+      conditions.push(
+        sql`(
+          6371 * acos(
+            cos(radians(${latitude})) * 
+            cos(radians(CAST(${listings.latitude} AS DECIMAL))) * 
+            cos(radians(CAST(${listings.longitude} AS DECIMAL)) - radians(${longitude})) + 
+            sin(radians(${latitude})) * 
+            sin(radians(CAST(${listings.latitude} AS DECIMAL)))
+          )
+        ) <= ${radius}`
       );
     }
 
@@ -243,8 +350,29 @@ export class DatabaseStorage implements IStorage {
       query = query.where(and(...conditions));
     }
 
+    // Apply sorting
+    let orderByClause;
+    switch (sortBy) {
+      case 'price_low':
+        orderByClause = [desc(listings.isPromoted), asc(listings.price)];
+        break;
+      case 'price_high':
+        orderByClause = [desc(listings.isPromoted), desc(listings.price)];
+        break;
+      case 'oldest':
+        orderByClause = [desc(listings.isPromoted), asc(listings.createdAt)];
+        break;
+      case 'most_viewed':
+        orderByClause = [desc(listings.isPromoted), desc(listings.viewCount)];
+        break;
+      case 'newest':
+      default:
+        orderByClause = [desc(listings.isPromoted), desc(listings.createdAt)];
+        break;
+    }
+
     const results = await query
-      .orderBy(desc(listings.isPromoted), desc(listings.createdAt))
+      .orderBy(...orderByClause)
       .limit(limit)
       .offset(offset);
 

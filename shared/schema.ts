@@ -65,11 +65,21 @@ export const listings = pgTable("listings", {
   originalPrice: decimal("original_price", { precision: 10, scale: 2 }), // For discounts
   priceType: varchar("price_type", { length: 20 }).notNull(), // 'fixed', 'free', 'negotiable'
   location: varchar("location", { length: 200 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  zipCode: varchar("zip_code", { length: 10 }),
+  latitude: varchar("latitude", { length: 20 }),
+  longitude: varchar("longitude", { length: 20 }),
   images: text("images").array(),
   status: varchar("status", { length: 20 }).notNull().default("active"), // 'active', 'sold', 'suspended'
   condition: varchar("condition", { length: 20 }).default("new"), // 'new', 'like_new', 'good', 'fair', 'poor'
   quantity: integer("quantity").default(1),
   brand: varchar("brand", { length: 100 }),
+  model: varchar("model", { length: 100 }),
+  size: varchar("size", { length: 50 }),
+  color: varchar("color", { length: 50 }),
+  weight: varchar("weight", { length: 50 }),
+  dimensions: varchar("dimensions", { length: 100 }),
   tags: text("tags").array(),
   isPromoted: boolean("is_promoted").default(false),
   isFeatured: boolean("is_featured").default(false),

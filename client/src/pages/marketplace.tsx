@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,7 +34,27 @@ export default function Marketplace() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const [condition, setCondition] = useState<string>("");
+  const [brand, setBrand] = useState<string>("");
+  const [model, setModel] = useState<string>("");
+  const [size, setSize] = useState<string>("");
+  const [color, setColor] = useState<string>("");
+  const [location, setLocation] = useState<{
+    city: string;
+    state: string;
+    zipCode: string;
+    latitude: string;
+    longitude: string;
+    radius: string;
+  }>({
+    city: "",
+    state: "",
+    zipCode: "",
+    latitude: "",
+    longitude: "",
+    radius: "25"
+  });
   const [activeTab, setActiveTab] = useState("all");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -44,7 +64,18 @@ export default function Marketplace() {
   });
 
   const { data: listings = [], isLoading } = useQuery<ListingWithDetails[]>({
-    queryKey: ["/api/listings", { search, categoryId: selectedCategory, sortBy, priceRange, condition }],
+    queryKey: ["/api/listings", { 
+      search, 
+      categoryId: selectedCategory, 
+      sortBy, 
+      priceRange, 
+      condition, 
+      brand, 
+      model, 
+      size, 
+      color, 
+      location 
+    }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
@@ -52,6 +83,19 @@ export default function Marketplace() {
       if (priceRange.min) params.append("minPrice", priceRange.min);
       if (priceRange.max) params.append("maxPrice", priceRange.max);
       if (condition) params.append("condition", condition);
+      if (brand) params.append("brand", brand);
+      if (model) params.append("model", model);
+      if (size) params.append("size", size);
+      if (color) params.append("color", color);
+      if (location.city) params.append("city", location.city);
+      if (location.state) params.append("state", location.state);
+      if (location.zipCode) params.append("zipCode", location.zipCode);
+      if (location.latitude && location.longitude) {
+        params.append("latitude", location.latitude);
+        params.append("longitude", location.longitude);
+        params.append("radius", location.radius);
+      }
+      params.append("sortBy", sortBy);
       params.append("limit", "50");
       
       const response = await fetch(`/api/listings?${params}`);
@@ -114,6 +158,38 @@ export default function Marketplace() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Search is handled by the query key change
+  };
+
+  // Get user's current location
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation(prev => ({
+            ...prev,
+            latitude: position.coords.latitude.toString(),
+            longitude: position.coords.longitude.toString()
+          }));
+          toast({
+            title: "Location updated",
+            description: "Your location has been set for location-based search.",
+          });
+        },
+        (error) => {
+          toast({
+            title: "Location access denied",
+            description: "Please enable location access or enter your location manually.",
+            variant: "destructive",
+          });
+        }
+      );
+    } else {
+      toast({
+        title: "Location not supported",
+        description: "Your browser doesn't support location services.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredListings = listings
@@ -239,6 +315,15 @@ export default function Marketplace() {
                   <Search className="h-4 w-4 mr-2" />
                   Search
                 </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="h-12 px-4"
+                >
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  Advanced Filters
+                </Button>
               </div>
 
               {/* Advanced Filters */}
@@ -292,6 +377,156 @@ export default function Marketplace() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Advanced Filters</CardTitle>
+              <CardDescription>
+                Use detailed filters to find exactly what you're looking for
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Brand */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Brand</label>
+                  <Input
+                    placeholder="Enter brand name"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                  />
+                </div>
+
+                {/* Model */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Model</label>
+                  <Input
+                    placeholder="Enter model"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                  />
+                </div>
+
+                {/* Size */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Size</label>
+                  <Select value={size} onValueChange={setSize}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Any size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any size</SelectItem>
+                      <SelectItem value="xs">XS</SelectItem>
+                      <SelectItem value="s">S</SelectItem>
+                      <SelectItem value="m">M</SelectItem>
+                      <SelectItem value="l">L</SelectItem>
+                      <SelectItem value="xl">XL</SelectItem>
+                      <SelectItem value="xxl">XXL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Color */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Color</label>
+                  <Input
+                    placeholder="Enter color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Location Filters */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium text-lg">Location-Based Search</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={getUserLocation}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Use My Location
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">City</label>
+                    <Input
+                      placeholder="Enter city"
+                      value={location.city}
+                      onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">State</label>
+                    <Input
+                      placeholder="Enter state"
+                      value={location.state}
+                      onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">ZIP Code</label>
+                    <Input
+                      placeholder="Enter ZIP"
+                      value={location.zipCode}
+                      onChange={(e) => setLocation(prev => ({ ...prev, zipCode: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Radius</label>
+                    <Select value={location.radius} onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 miles</SelectItem>
+                        <SelectItem value="10">10 miles</SelectItem>
+                        <SelectItem value="25">25 miles</SelectItem>
+                        <SelectItem value="50">50 miles</SelectItem>
+                        <SelectItem value="100">100 miles</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Actions */}
+              <div className="flex justify-end gap-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearch("");
+                    setSelectedCategory("");
+                    setCondition("");
+                    setBrand("");
+                    setModel("");
+                    setSize("");
+                    setColor("");
+                    setPriceRange({ min: "", max: "" });
+                    setLocation({
+                      city: "",
+                      state: "",
+                      zipCode: "",
+                      latitude: "",
+                      longitude: "",
+                      radius: "25"
+                    });
+                  }}
+                >
+                  Clear All Filters
+                </Button>
+                <Button onClick={() => setShowAdvancedFilters(false)}>
+                  Apply Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Product Tabs */}
         <div className="mb-8">
