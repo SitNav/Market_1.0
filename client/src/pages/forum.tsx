@@ -282,33 +282,43 @@ export default function Forum() {
                   <CardTitle className="text-lg">Categories</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <button
                       onClick={() => setSelectedCategory("all")}
-                      className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                      className={`p-3 rounded-lg border-2 transition-all ${
                         selectedCategory === "all"
-                          ? "bg-primary text-white"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5"
                       }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Hash className="w-4 h-4" />
-                        <span>All Posts</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Hash className="w-4 h-4" />
+                          <span className="font-medium">All Posts</span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {forumPosts.length}
+                        </span>
                       </div>
                     </button>
                     {categories.map((category) => (
                       <button
                         key={category.id}
                         onClick={() => setSelectedCategory(category.id.toString())}
-                        className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                        className={`p-3 rounded-lg border-2 transition-all ${
                           selectedCategory === category.id.toString()
-                            ? "bg-primary text-white"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5"
                         }`}
                       >
-                        <div className="flex items-center space-x-2">
-                          <Hash className="w-4 h-4" />
-                          <span>{category.name}</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Hash className="w-4 h-4" />
+                            <span className="font-medium">{category.name}</span>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {forumPosts.filter(post => post.category?.id === category.id).length}
+                          </span>
                         </div>
                       </button>
                     ))}
