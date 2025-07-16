@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Home, Briefcase, Utensils, GraduationCap, Heart, HandHeart, Shield, Headphones, Lock } from "lucide-react";
 import Logo from "@/components/logo";
+import SEOHead from "@/components/seo-head";
+import { trackEvent } from "@/lib/analytics";
 import { useState } from "react";
 
 const categories = [
@@ -37,17 +39,27 @@ export default function Landing() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogin = () => {
+    // Track login attempt
+    trackEvent('login_attempt', 'authentication', 'login_button_clicked');
     window.location.href = "/api/login";
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // Track search event
+    trackEvent('search', 'engagement', 'landing_search', searchQuery.length);
     // Handle search functionality
     console.log("Search query:", searchQuery);
   };
 
   return (
     <div className="min-h-screen bg-warm-gray">
+      <SEOHead
+        title="Community Marketplace for Essential Resources"
+        description="Find housing, employment, food, education, and support services in your community. Connect with others and access essential resources through TerraNav Solutions marketplace."
+        keywords="community marketplace, housing assistance, employment opportunities, food resources, education support, community services, at-risk individuals"
+        canonical={window.location.href}
+      />
       {/* Hero Section */}
       <section className="terra-gradient text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

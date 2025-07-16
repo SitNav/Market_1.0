@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { trackEvent } from "@/lib/analytics";
 import { Upload, X, Plus } from "lucide-react";
 import type { Category } from "@shared/schema";
 
@@ -78,7 +79,10 @@ export default function CreateListing() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Track listing creation event
+      trackEvent('create_listing', 'engagement', 'listing_created', 1);
+      
       toast({
         title: "Success",
         description: "Your listing has been created successfully!",

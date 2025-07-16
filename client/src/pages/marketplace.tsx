@@ -26,6 +26,7 @@ import ProductCard from "@/components/product-card";
 import CategoryCard from "@/components/category-card";
 import MobileSearch from "@/components/mobile-search";
 import MobileProductCard from "@/components/mobile-product-card";
+import SEOHead from "@/components/seo-head";
 import { apiRequest } from "@/lib/queryClient";
 import type { ListingWithDetails, Category } from "@shared/schema";
 
@@ -239,6 +240,12 @@ export default function Marketplace() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEOHead
+        title="Marketplace - Buy & Sell Community Resources"
+        description="Browse and purchase essential items including housing, food, clothing, and services from your local community. Find deals, search by location, and connect with sellers near you."
+        keywords="marketplace, buy sell, community resources, local marketplace, housing for sale, food services, clothing deals, location-based shopping"
+        canonical={window.location.href}
+      />
       {/* Mobile Search Component */}
       <MobileSearch
         search={search}

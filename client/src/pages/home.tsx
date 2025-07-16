@@ -10,6 +10,7 @@ import ListingCard from "@/components/listing-card";
 import CategoryCard from "@/components/category-card";
 import SearchBar from "@/components/search-bar";
 import MobileProductCard from "@/components/mobile-product-card";
+import SEOHead from "@/components/seo-head";
 import type { ListingWithDetails, Category } from "@shared/schema";
 
 export default function Home() {
@@ -38,6 +39,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-warm-gray">
+      <SEOHead
+        title="Dashboard - Your Community Hub"
+        description="Access your personalized dashboard with featured listings, categories, and community resources. Manage your listings and discover new opportunities."
+        keywords="dashboard, community resources, personal listings, marketplace hub"
+        canonical={window.location.href}
+      />
       {/* Hero Section */}
       <section className="terra-gradient text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
