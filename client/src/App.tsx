@@ -14,6 +14,8 @@ import Profile from "@/pages/profile";
 import Admin from "@/pages/admin";
 import Forum from "@/pages/forum";
 import ForumPost from "@/pages/forum-post";
+import Categories from "@/pages/categories";
+import Resources from "@/pages/resources";
 import Navigation from "@/components/navigation";
 
 function Router() {
@@ -43,6 +45,8 @@ function Router() {
             <Route path="/admin" component={Admin} />
             <Route path="/forum" component={Forum} />
             <Route path="/forum/:id" component={ForumPost} />
+            <Route path="/categories" component={Categories} />
+            <Route path="/resources" component={Resources} />
           </>
         )}
         <Route component={NotFound} />
