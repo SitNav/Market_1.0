@@ -1,0 +1,231 @@
+type User @model @auth(rules: [
+  { allow: owner, operations: [create, read, update, delete] }
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  email: String!
+  firstName: String
+  lastName: String
+  profileImageUrl: String
+  listings: [Listing] @hasMany(indexName: "byUser", fields: ["id"])
+  sentMessages: [Message] @hasMany(indexName: "bySender", fields: ["id"])
+  receivedMessages: [Message] @hasMany(indexName: "byReceiver", fields: ["id"])
+  reviews: [Review] @hasMany(indexName: "byReviewer", fields: ["id"])
+  givenReviews: [Review] @hasMany(indexName: "byReviewedUser", fields: ["id"])
+  forumPosts: [ForumPost] @hasMany(indexName: "byUser", fields: ["id"])
+  comments: [Comment] @hasMany(indexName: "byUser", fields: ["id"])
+  cartItems: [CartItem] @hasMany(indexName: "byUser", fields: ["id"])
+  wishlistItems: [WishlistItem] @hasMany(indexName: "byUser", fields: ["id"])
+  stripeCustomerId: String
+  stripeSubscriptionId: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Category @model @auth(rules: [
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  name: String!
+  slug: String! @index(name: "bySlug")
+  description: String
+  listings: [Listing] @hasMany(indexName: "byCategory", fields: ["id"])
+  forumPosts: [ForumPost] @hasMany(indexName: "byCategory", fields: ["id"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Listing @model @auth(rules: [
+  { allow: owner, operations: [create, update, delete] }
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  title: String!
+  description: String
+  price: Float
+  images: [String]
+  status: String! @default(value: "active")
+  condition: String
+  brand: String
+  model: String
+  size: String
+  color: String
+  location: String
+  city: String
+  state: String
+  zipCode: String
+  latitude: Float
+  longitude: Float
+  viewCount: Int @default(value: 0)
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  categoryId: ID! @index(name: "byCategory")
+  category: Category @belongsTo(fields: ["categoryId"])
+  messages: [Message] @hasMany(indexName: "byListing", fields: ["id"])
+  comments: [Comment] @hasMany(indexName: "byListing", fields: ["id"])
+  reviews: [Review] @hasMany(indexName: "byListing", fields: ["id"])
+  cartItems: [CartItem] @hasMany(indexName: "byListing", fields: ["id"])
+  wishlistItems: [WishlistItem] @hasMany(indexName: "byListing", fields: ["id"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Message @model @auth(rules: [
+  { allow: owner, operations: [create, read, update, delete] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  content: String!
+  isRead: Boolean @default(value: false)
+  senderId: ID! @index(name: "bySender")
+  sender: User @belongsTo(fields: ["senderId"])
+  receiverId: ID! @index(name: "byReceiver")
+  receiver: User @belongsTo(fields: ["receiverId"])
+  listingId: ID @index(name: "byListing")
+  listing: Listing @belongsTo(fields: ["listingId"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Report @model @auth(rules: [
+  { allow: owner, operations: [create, read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  reason: String!
+  description: String
+  status: String! @default(value: "pending")
+  reportedUserId: ID
+  reportedUser: User @belongsTo(fields: ["reportedUserId"])
+  listingId: ID
+  listing: Listing @belongsTo(fields: ["listingId"])
+  reporterId: ID!
+  reporter: User @belongsTo(fields: ["reporterId"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Comment @model @auth(rules: [
+  { allow: owner, operations: [create, update, delete] }
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  content: String!
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  listingId: ID @index(name: "byListing")
+  listing: Listing @belongsTo(fields: ["listingId"])
+  forumPostId: ID @index(name: "byForumPost")
+  forumPost: ForumPost @belongsTo(fields: ["forumPostId"])
+  parentId: ID @index(name: "byParent")
+  parent: Comment @belongsTo(fields: ["parentId"])
+  replies: [Comment] @hasMany(indexName: "byParent", fields: ["id"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ForumPost @model @auth(rules: [
+  { allow: owner, operations: [create, update, delete] }
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  title: String!
+  content: String!
+  viewCount: Int @default(value: 0)
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  categoryId: ID @index(name: "byCategory")
+  category: Category @belongsTo(fields: ["categoryId"])
+  comments: [Comment] @hasMany(indexName: "byForumPost", fields: ["id"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Review @model @auth(rules: [
+  { allow: owner, operations: [create, update, delete] }
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  rating: Int!
+  comment: String
+  reviewerId: ID! @index(name: "byReviewer")
+  reviewer: User @belongsTo(fields: ["reviewerId"])
+  reviewedUserId: ID @index(name: "byReviewedUser")
+  reviewedUser: User @belongsTo(fields: ["reviewedUserId"])
+  listingId: ID @index(name: "byListing")
+  listing: Listing @belongsTo(fields: ["listingId"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type UserRating @model @auth(rules: [
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  averageRating: Float!
+  totalRating: Int!
+  reviewCount: Int!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CartItem @model @auth(rules: [
+  { allow: owner, operations: [create, read, update, delete] }
+]) {
+  id: ID!
+  quantity: Int! @default(value: 1)
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  listingId: ID! @index(name: "byListing")
+  listing: Listing @belongsTo(fields: ["listingId"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type WishlistItem @model @auth(rules: [
+  { allow: owner, operations: [create, read, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  listingId: ID! @index(name: "byListing")
+  listing: Listing @belongsTo(fields: ["listingId"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ProductReview @model @auth(rules: [
+  { allow: owner, operations: [create, update, delete] }
+  { allow: public, operations: [read] }
+  { allow: groups, groups: ["admin"] }
+]) {
+  id: ID!
+  rating: Int!
+  comment: String
+  verified: Boolean @default(value: false)
+  userId: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["userId"])
+  listingId: ID! @index(name: "byListing")
+  listing: Listing @belongsTo(fields: ["listingId"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Subscriptions for real-time features
+type Subscription {
+  onCreateMessage(receiverId: ID!): Message
+    @aws_subscribe(mutations: ["createMessage"])
+  onUpdateListing(id: ID!): Listing
+    @aws_subscribe(mutations: ["updateListing"])
+  onCreateComment(listingId: ID, forumPostId: ID): Comment
+    @aws_subscribe(mutations: ["createComment"])
+}
