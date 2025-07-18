@@ -1,4 +1,4 @@
-import { API, graphqlOperation } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/api';
 
 // Optimized GraphQL queries for the marketplace
 export const listListingsWithFilters = /* GraphQL */ `

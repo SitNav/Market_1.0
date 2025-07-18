@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Auth } from 'aws-amplify';
+import { fetchAuthSession, signIn, signUp, signOut, confirmSignUp, getCurrentUser } from 'aws-amplify/auth';
 
 export const useAmplifyAuth = () => {
   const [user, setUser] = useState(null);

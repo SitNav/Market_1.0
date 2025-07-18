@@ -1,4 +1,4 @@
-import { API, graphqlOperation } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/api';
 
 // GraphQL mutations for marketplace operations
 export const createListingMutation = /* GraphQL */ `
